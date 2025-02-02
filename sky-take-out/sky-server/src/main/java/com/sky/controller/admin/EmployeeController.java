@@ -94,4 +94,12 @@ public class EmployeeController {
         return Result.success(pageResult);
     }
 
+    @PostMapping("/status/{status}")
+    @ApiOperation("Enable or Disable Employee Account")
+    public Result toggleStatus(@PathVariable("status") Integer status,@RequestParam("id") Long id){
+        log.info("Enable or Disable Employee Account: status:{}, id:{}", status, id);
+        employeeService.toggleStatus(status, id);
+        return Result.success();
+    }
+
 }

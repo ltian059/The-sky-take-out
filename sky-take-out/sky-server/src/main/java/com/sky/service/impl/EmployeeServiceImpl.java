@@ -100,6 +100,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /**
      * Paging query for employee
+     *
      * @param employeePageQueryDTO
      * @return
      */
@@ -110,6 +111,22 @@ public class EmployeeServiceImpl implements EmployeeService {
         PageHelper.startPage(employeePageQueryDTO.getPage(), employeePageQueryDTO.getPageSize());
         Page<Employee> page = employeeMapper.pageQuery(employeePageQueryDTO);
         return new PageResult<>(page.getTotal(), page.getResult());
+    }
+
+    /**
+     * Enable or Disable Employee Status
+     *
+     * @param status
+     * @param id
+     */
+    @Override
+    public void toggleStatus(Integer status, Long id) {
+        //update employee set status = #{status} where id = #{id}
+        Employee employee = Employee.builder()
+                .status(status)
+                .id(id)
+                .build();
+        employeeMapper.update(employee);
     }
 
 }
