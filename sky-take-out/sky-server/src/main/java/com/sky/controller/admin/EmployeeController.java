@@ -1,6 +1,7 @@
 package com.sky.controller.admin;
 
 import com.sky.constant.JwtClaimsConstant;
+import com.sky.constant.MessageConstant;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.dto.EmployeePageQueryDTO;
@@ -100,6 +101,27 @@ public class EmployeeController {
         log.info("Enable or Disable Employee Account: status:{}, id:{}", status, id);
         employeeService.toggleStatus(status, id);
         return Result.success();
+    }
+
+    @GetMapping("/{id}")
+    @ApiOperation("Query employee information by id")
+    public Result<Employee> getEmployeeInfoById(@PathVariable Long id){
+        log.info("Get Employee Info By id:{}", id);
+        Employee employee = employeeService.selectById(id);
+        if(employee != null)
+            return Result.success(employee);
+        else return Result.error(MessageConstant.ACCOUNT_NOT_FOUND);
+    }
+
+    @PutMapping
+    @ApiOperation("Update Employee information")
+    public Result updateEmployee(@RequestBody EmployeeDTO employeeDTO){
+        log.info("Edit employee info:{}", employeeDTO);
+        int update = employeeService.updateEmployee(employeeDTO);
+        if(update > 0){
+            return Result.success();
+        }else
+            return Result.error(MessageConstant.UNKNOWN_ERROR);
     }
 
 }

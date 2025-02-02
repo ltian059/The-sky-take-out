@@ -41,5 +41,8 @@ public interface EmployeeMapper {
      * Update employee information
      * @param employee
      */
-    void update(Employee employee);
+    int update(Employee employee);
+
+    @Select("SELECT * FROM employee WHERE id = #{id}")
+    Employee selectById(Long id);
 }
