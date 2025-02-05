@@ -2,10 +2,10 @@ package com.sky.mapper;
 
 import com.github.pagehelper.Page;
 import com.sky.annotation.AutoFill;
+import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.enumeration.OperationType;
-import com.sky.result.PageResult;
 import com.sky.vo.DishVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -42,4 +42,17 @@ public interface DishMapper {
     Integer delete(Long[] ids);
 
     List<Dish> getByIds(Long[] ids);
+
+    /**
+     * Count how many dishes are on sale among the dishes.
+     * @param ids
+     * @return the number of dishes that are on sale.
+     */
+    Integer countOnStatus(Long[] ids, Integer status);
+
+    @AutoFill(OperationType.UPDATE)
+    Integer updateDishes(List<Dish> dishes);
+
+
+
 }

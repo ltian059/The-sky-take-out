@@ -16,6 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Customized Apsect
@@ -56,28 +57,41 @@ public class AutoFillAspect {
 
         //4. According to current operation type, assign data to the object's corresponding field.
         try {
-            if (OperationType.INSERT == operationType) {
-                //Assign 4 common fields.
-                Method setCreateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_TIME, LocalDateTime.class);
-                Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
-                Method setCreateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_USER, Long.class);
-                Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
-                //Assign the fields using reflection
-                setCreateTime.invoke(entity, time);
-                setUpdateTime.invoke(entity, time);
-                setCreateUser.invoke(entity, currentId);
-                setUpdateUser.invoke(entity, currentId);
-
-            } else if (OperationType.UPDATE == operationType) {
-                //Assign 2 common fields.
-                Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
-                Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
-                //Assign the fields using reflection
-                setUpdateTime.invoke(entity, time);
-                setUpdateUser.invoke(entity, currentId);
+            if(entity instanceof List<?>){
+                List<?> list = (List<?>) entity;
+                for (Object item : list){
+                    fillCommonFields(item, operationType, time, currentId);
+                }
+            }else{
+                fillCommonFields(entity, operationType, time, currentId);
             }
+
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void fillCommonFields(Object entity, OperationType operationType, LocalDateTime time, Long currentId)
+    throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        if (OperationType.INSERT == operationType) {
+            //Assign 4 common fields.
+            Method setCreateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_TIME, LocalDateTime.class);
+            Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
+            Method setCreateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_USER, Long.class);
+            Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
+            //Assign the fields using reflection
+            setCreateTime.invoke(entity, time);
+            setUpdateTime.invoke(entity, time);
+            setCreateUser.invoke(entity, currentId);
+            setUpdateUser.invoke(entity, currentId);
+
+        } else if (OperationType.UPDATE == operationType) {
+            //Assign 2 common fields.
+            Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
+            Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
+            //Assign the fields using reflection
+            setUpdateTime.invoke(entity, time);
+            setUpdateUser.invoke(entity, currentId);
         }
     }
 }

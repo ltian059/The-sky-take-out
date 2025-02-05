@@ -3,6 +3,33 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.sky.mapper.DishMapper">
 
+    <update id="updateDishes">
+        <foreach collection="dishes" item="dish" separator=";">
+            UPDATE dish
+            <set>
+                <if test="dish.name != null">
+                    name = #{dish.name},
+                </if>
+                <if test="dish.categoryId != null">
+                    category_id = #{dish.categoryId},
+                </if>
+                <if test="dish.price != null">
+                    price = #{dish.price},
+                </if>
+                <if test="dish.image != null">
+                    image = #{dish.image},
+                </if>
+                <if test="dish.description != null">
+                    description = #{dish.description},
+                </if>
+                <if test="dish.status != null">
+                    status = #{dish.status},
+                </if>
+            </set>
+            WHERE id = #{dish.id}
+        </foreach>
+    </update>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO dish(name, category_id, price, image, description, status, create_time, update_time, create_user, update_user)
         values
@@ -40,4 +67,14 @@
             #{id}
         </foreach>
     </select>
+    <select id="countOnStatus" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM dish
+        WHERE id IN
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        AND status = #{status}
+    </select>
+
 </mapper>

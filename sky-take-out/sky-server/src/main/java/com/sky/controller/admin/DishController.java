@@ -47,4 +47,27 @@ public class DishController {
         return Result.success();
     }
 
+    @PostMapping("/status/{status}")
+    @ApiOperation("Enable or Disable dish sale status")
+    public Result toggleDishStatus(@RequestParam Long id, @PathVariable Integer status){
+        Integer update = dishService.toggleDishStatus(id, status);
+        return Result.success();
+    }
+
+    @GetMapping("/{id}")
+    @ApiOperation("Query a dish by id")
+    public Result<DishVO> getDishById(@PathVariable Long id){
+        DishVO dishVO = dishService.getDishWithFlavorById(id);
+        return Result.success(dishVO);
+    }
+
+    @PutMapping
+    @ApiOperation("Modify a dish")
+    public Result updateDish(@RequestBody DishDTO dishDTO){
+        Integer update = dishService.updateDish(dishDTO);
+        if (update > 0)
+            return Result.success();
+        else throw new RuntimeException("Update dish failed...");
+    }
+
 }

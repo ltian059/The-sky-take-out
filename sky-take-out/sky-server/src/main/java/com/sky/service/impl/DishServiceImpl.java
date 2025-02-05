@@ -15,14 +15,15 @@ import com.sky.mapper.SetmealDishMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -36,6 +37,7 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private SetmealDishMapper setmealDishMapper;
+
     @Override
     @Transactional
     public void addDishWithFlavor(DishDTO dishDTO) {
@@ -49,7 +51,7 @@ public class DishServiceImpl implements DishService {
 
         //Add n records to flavor table
         List<DishFlavor> flavors = dishDTO.getFlavors();
-        if (!flavors.isEmpty()){
+        if (!flavors.isEmpty()) {
             flavors.forEach(dishFlavor -> dishFlavor.setDishId(dishId));
             //Insert n records into flavor table
             dishFlavorMapper.insertBatch(flavors);
@@ -59,6 +61,7 @@ public class DishServiceImpl implements DishService {
 
     /**
      * Dish Page Query
+     *
      * @param dto
      * @return
      */
@@ -70,7 +73,6 @@ public class DishServiceImpl implements DishService {
     }
 
     /**
-     *
      * @param ids
      * @return
      */
@@ -78,21 +80,72 @@ public class DishServiceImpl implements DishService {
     @Transactional
     public Integer deleteInBatch(Long[] ids) {
         //1. Check if the dish is on sale or disabled. Only disabled dishes can be deleted.
-        List<Dish> dishes = dishMapper.getByIds(ids);
-        for(Dish d : dishes){
-            if(Objects.equals(d.getStatus(), StatusConstant.ENABLE)){
-                throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
-            }
+        Integer onSale = dishMapper.countOnStatus(ids, StatusConstant.ENABLE);
+        if (onSale > 0) {
+            throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
         }
+
         //2. Check if the dish is correlated with setmeals
         List<Long> setmealIds = setmealDishMapper.getSetmealIdsByDishIds(ids);
-        if(!setmealIds.isEmpty()){
+        if (!setmealIds.isEmpty()) {
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
+
         //3. Delete dish records in the dish table
         Integer count = dishMapper.delete(ids);
         //4. Delete flavor records correlated with the deleted dishes.
         Integer dfCount = dishFlavorMapper.deleteByDishIds(ids);
         return count;
+    }
+
+
+    @Override
+    public Integer toggleDishStatus(Long id, Integer status) {
+        List<Dish> dishes = new ArrayList<>();
+        Dish dish = Dish.builder().id(id).status(status).build();
+        dishes.add(dish);
+        Integer update = dishMapper.updateDishes(dishes);
+        return update;
+    }
+
+    @Override
+    public DishVO getDishWithFlavorById(Long id) {
+        //1. Get the dish
+        List<Dish> byIds = dishMapper.getByIds(new Long[]{id});
+        if (byIds.isEmpty()) throw new RuntimeException("The dish cannot be found.");
+        Dish dish = byIds.get(0);
+        //2. Get the flavors belonging to the dish
+        List<DishFlavor> flavors = dishFlavorMapper.getByDishId(id);
+        DishVO dishVO = new DishVO();
+        BeanUtils.copyProperties(dish, dishVO);
+        dishVO.setFlavors(flavors);
+
+        return dishVO;
+    }
+
+    @Override
+    @Transactional
+    public Integer updateDish(DishDTO dishDTO) {
+        ArrayList<DishDTO> list = new ArrayList<>();
+        list.add(dishDTO);
+        ArrayList<Dish> dishes = new ArrayList<>();
+        list.forEach(dto -> {
+            Dish dish = new Dish();
+            BeanUtils.copyProperties(dto, dish);
+            dishes.add(dish);
+        });
+        //1. update the dish table
+        Integer update = dishMapper.updateDishes(dishes);
+        //2. update the dish_flavor table: Delete all flavors of the dish, then add updated flavors of the dish.
+        Integer deletes = dishFlavorMapper.deleteByDishIds(dishes.stream()
+                .map(Dish::getId)
+                .toArray(Long[]::new));
+        list.forEach(dto -> {
+            if(!dto.getFlavors().isEmpty()){
+                dto.getFlavors().forEach(flavor -> flavor.setDishId(dto.getId()));
+                dishFlavorMapper.insertBatch(dto.getFlavors());
+            }
+        });
+        return update;
     }
 }

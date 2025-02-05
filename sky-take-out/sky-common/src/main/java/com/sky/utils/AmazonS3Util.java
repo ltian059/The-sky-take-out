@@ -61,7 +61,7 @@ public class AmazonS3Util {
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(bytes.length);
 
-        s3Client.putObject(accessPoint, objectName, new ByteArrayInputStream(bytes), metadata);
+        s3Client.putObject(bucketName, objectName, new ByteArrayInputStream(bytes), metadata);
 
         return generatePresignedUrl(objectName, 3600);
     }
