@@ -1,7 +1,19 @@
 package com.sky.mapper;
 
+import com.github.pagehelper.Page;
+import com.sky.annotation.AutoFill;
+import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.entity.Setmeal;
+import com.sky.enumeration.OperationType;
+import com.sky.vo.SetmealVO;
+import io.swagger.models.auth.In;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 @Mapper
 public interface SetmealMapper {
@@ -13,5 +25,23 @@ public interface SetmealMapper {
      */
     @Select("select count(id) from setmeal where category_id = #{categoryId}")
     Integer countByCategoryId(Long id);
+
+    @AutoFill(OperationType.INSERT)
+    Integer insert(Setmeal setmeal);
+
+    Page<SetmealVO> pageQuery(SetmealPageQueryDTO pageQueryDTO);
+
+    /**
+     * Delete multiple setmeals
+     * @param ids ids of setmeals to be deleted
+     */
+    void deleteBatch(List<Long> ids);
+
+    @Select("SELECT * FROM setmeal WHERE id = #{id}")
+    Setmeal selectById(Long id);
+
+    @AutoFill(OperationType.UPDATE)
+    void update(Setmeal setmeal);
+
 
 }

@@ -2,6 +2,7 @@ package com.sky.controller.admin;
 
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
+import com.sky.entity.Dish;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.DishService;
@@ -70,4 +71,10 @@ public class DishController {
         else throw new RuntimeException("Update dish failed...");
     }
 
+    @GetMapping("/list")
+    @ApiOperation("Get dishes list by categoryId")
+    public Result<List<Dish>> listDishByCategoryId(@RequestParam Long categoryId){
+        List<Dish> dishes = dishService.listDishByCategoryId(categoryId);
+        return Result.success(dishes);
+    }
 }
