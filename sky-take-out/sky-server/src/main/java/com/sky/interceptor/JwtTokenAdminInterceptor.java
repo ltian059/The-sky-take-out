@@ -39,9 +39,13 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             //当前拦截到的不是动态方法，直接放行
             return true;
         }
-
+        // 如果请求是图片接口，则直接放行，不进行 JWT 校验
+        if (request.getRequestURI().startsWith("/admin/common/image")){
+            return true;
+        }
         //1、从请求头中获取令牌
         String token = request.getHeader(jwtProperties.getAdminTokenName());
+
 
         //2、校验令牌
         try {

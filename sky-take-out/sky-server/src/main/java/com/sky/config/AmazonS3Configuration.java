@@ -18,9 +18,7 @@ public class AmazonS3Configuration {
     @ConditionalOnMissingBean
     public AmazonS3Util amazonS3Util(AmazonS3Properties amazonS3Properties){
         log.info("Start creating AmazonS3Util object...{}", amazonS3Properties);
-        return new AmazonS3Util(amazonS3Properties.getAwsAccessKeyId(),
-                amazonS3Properties.getAwsSecretAccessKey(),
-                amazonS3Properties.getBucketName(),
-                amazonS3Properties.getAccessPoint());
+        return new AmazonS3Util(
+                amazonS3Properties.getBucketName());
     }
 }

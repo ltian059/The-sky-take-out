@@ -14,11 +14,13 @@ import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
+import com.sky.utils.AmazonS3Util;
 import com.sky.vo.DishVO;
 import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,12 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private SetmealDishMapper setmealDishMapper;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Autowired
+    private AmazonS3Util amazonS3Util;
 
     @Override
     @Transactional
@@ -69,6 +77,7 @@ public class DishServiceImpl implements DishService {
     public PageResult<DishVO> pageQuery(DishPageQueryDTO dto) {
         PageHelper.startPage(dto.getPage(), dto.getPageSize());
         Page<DishVO> page = dishMapper.pageQuery(dto);
+        List<DishVO> result = page.getResult();
         return new PageResult<>(page.getTotal(), page.getResult());
     }
 

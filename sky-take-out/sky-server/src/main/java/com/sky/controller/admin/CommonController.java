@@ -1,5 +1,6 @@
 package com.sky.controller.admin;
 
+import com.sky.constant.CommonConstant;
 import com.sky.constant.MessageConstant;
 import com.sky.result.Result;
 import com.sky.utils.AmazonS3Util;
@@ -7,12 +8,17 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,6 +31,9 @@ public class CommonController {
     @Autowired
     private AmazonS3Util amazonS3Util;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     /**
      * Image file upload
      * @param file
@@ -34,23 +43,51 @@ public class CommonController {
     @ApiOperation("Image File Upload")
     public Result<String> fileUpload(@RequestBody MultipartFile file){
         log.info("Uploading image files:{}", file);
+        String originalFilename = file.getOriginalFilename();
+        //Get original file suffix
+        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String objectName = UUID.randomUUID().toString() + extension;
+
+        String url = null;
         try {
-            String originalFilename = file.getOriginalFilename();
-            //Get original file suffix
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String objectName = UUID.randomUUID().toString() + extension;
-
-            String url = amazonS3Util.uploadFile(file.getBytes(), objectName);
-            log.info("Presigned url:{}", url);
-            return Result.success(url);
-
+            amazonS3Util.uploadFile(file.getBytes(), objectName);
         } catch (IOException e) {
-            log.error("File upload failed:{}", e.getMessage());
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        return Result.error(MessageConstant.UPLOAD_FAILED);
+        url = CommonConstant.IMAGE_GET_URL + objectName;
+        log.info("Presigned url:{}", url);
+        return Result.success(url);
+
     }
 
+    @GetMapping("/image/{objectName}")
+    @ApiOperation("Get the image url by objectName")
+    public void getImageUrl(@PathVariable String objectName, HttpServletResponse response) throws IOException {
+        log.info("Get the image url by objectName:{}", objectName);
+        Object redisValue = redisTemplate.opsForValue().get(objectName);
+        String presignedUrl;
+        if (redisValue == null){
+            presignedUrl = amazonS3Util.generatePresignedUrl(objectName, CommonConstant.IMAGE_EXPIRATION_MINUTES);
+        }else{
+            presignedUrl = redisValue.toString();
+        }
+        // 建立与 S3 presigned URL 的连接
+        URL url = new URL(presignedUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        // 设置响应的 Content-Type 为 S3 返回的图片类型（如 image/png）
+        response.setContentType(conn.getContentType());
+
+        try(InputStream in = conn.getInputStream();
+            OutputStream out = response.getOutputStream()){
+            byte[] buffer = new byte[4096];
+            int len;
+            while((len = in.read(buffer)) != -1){
+                out.write(buffer, 0, len);
+            }
+        }
+
+    }
 
 
 }
