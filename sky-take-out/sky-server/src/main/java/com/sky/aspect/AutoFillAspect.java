@@ -71,27 +71,42 @@ public class AutoFillAspect {
         }
     }
 
+    private Method getDeclaredMethodSafe(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
+        try {
+            return clazz.getDeclaredMethod(methodName, parameterTypes);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
     private void fillCommonFields(Object entity, OperationType operationType, LocalDateTime time, Long currentId)
     throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         if (OperationType.INSERT == operationType) {
             //Assign 4 common fields.
-            Method setCreateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_TIME, LocalDateTime.class);
-            Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
-            Method setCreateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_USER, Long.class);
-            Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
+            Method setCreateTime = getDeclaredMethodSafe(entity.getClass(), AutoFillConstant.SET_CREATE_TIME, LocalDateTime.class);
+            Method setUpdateTime = getDeclaredMethodSafe(entity.getClass(), AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
+            Method setCreateUser = getDeclaredMethodSafe(entity.getClass(), AutoFillConstant.SET_CREATE_USER, Long.class);
+            Method setUpdateUser = getDeclaredMethodSafe(entity.getClass(), AutoFillConstant.SET_UPDATE_USER, Long.class);
             //Assign the fields using reflection
-            setCreateTime.invoke(entity, time);
-            setUpdateTime.invoke(entity, time);
-            setCreateUser.invoke(entity, currentId);
-            setUpdateUser.invoke(entity, currentId);
+            if (setCreateTime != null)
+                setCreateTime.invoke(entity, time);
+            if (setUpdateTime != null)
+                setUpdateTime.invoke(entity, time);
+            if (setCreateUser != null)
+                setCreateUser.invoke(entity, currentId);
+            if (setUpdateUser != null)
+                setUpdateUser.invoke(entity, currentId);
 
         } else if (OperationType.UPDATE == operationType) {
             //Assign 2 common fields.
-            Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
-            Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
+            Method setUpdateTime = getDeclaredMethodSafe(entity.getClass(), AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
+            Method setUpdateUser = getDeclaredMethodSafe(entity.getClass(), AutoFillConstant.SET_UPDATE_USER, Long.class);
             //Assign the fields using reflection
-            setUpdateTime.invoke(entity, time);
-            setUpdateUser.invoke(entity, currentId);
+            if (setUpdateTime != null)
+                setUpdateTime.invoke(entity, time);
+            if (setUpdateUser != null)
+                setUpdateUser.invoke(entity, currentId);
         }
     }
+
+
 }

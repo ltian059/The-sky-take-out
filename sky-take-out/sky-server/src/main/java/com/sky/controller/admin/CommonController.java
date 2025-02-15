@@ -7,6 +7,10 @@ import com.sky.utils.AmazonS3Util;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -71,21 +75,29 @@ public class CommonController {
         }else{
             presignedUrl = redisValue.toString();
         }
-        // 建立与 S3 presigned URL 的连接
-        URL url = new URL(presignedUrl);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        // 设置响应的 Content-Type 为 S3 返回的图片类型（如 image/png）
-        response.setContentType(conn.getContentType());
-
-        try(InputStream in = conn.getInputStream();
-            OutputStream out = response.getOutputStream()){
-            byte[] buffer = new byte[4096];
-            int len;
-            while((len = in.read(buffer)) != -1){
-                out.write(buffer, 0, len);
-            }
+        //Use httpclient to send a get request to the presigned url
+        try(CloseableHttpClient httpClient = HttpClients.createDefault()){
+            HttpGet httpGet = new HttpGet(presignedUrl);
+            CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
+            //Get the entity of the response and write it to the output stream of the servlet response
+            httpResponse.getEntity().writeTo(response.getOutputStream());
+            httpResponse.close();
         }
+
+//        URL url = new URL(presignedUrl);
+//        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//        conn.setRequestMethod("GET");
+        // 设置响应的 Content-Type 为 S3 返回的图片类型（如 image/png）
+        //response.setContentType(conn.getContentType());
+
+//        try(InputStream in = conn.getInputStream();
+//            OutputStream out = response.getOutputStream()){
+//            byte[] buffer = new byte[4096];
+//            int len;
+//            while((len = in.read(buffer)) != -1){
+//                out.write(buffer, 0, len);
+//            }
+//        }
 
     }
 

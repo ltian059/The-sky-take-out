@@ -45,4 +45,18 @@
         </where>
         ORDER BY update_time DESC
     </select>
+    <select id="list" resultType="com.sky.entity.Setmeal">
+        SELECT * FROM setmeal
+        <where>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="name != null">
+                AND name LIKE concat('%', #{name}, '%')
+            </if>
+        </where>
+    </select>
 </mapper>

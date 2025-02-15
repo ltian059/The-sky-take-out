@@ -20,9 +20,11 @@ public class ShopController {
     private static final String SHOP_STATUS = "SHOP_STATUS";
 
     @GetMapping("/status")
+
     @ApiOperation("Get shop status")
     public Result<Integer> getStatus() {
         Integer status = (Integer) redisTemplate.opsForValue().get(SHOP_STATUS);
+        log.info("User Get shop status:{}", status == 0 ? "Off" : "On");
         return Result.success(status);
     }
 }

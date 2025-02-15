@@ -76,5 +76,23 @@
         </foreach>
         AND status = #{status}
     </select>
+    <select id="list" resultType="com.sky.entity.Dish">
+        SELECT * FROM dish
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="name != null">
+                AND LOWER(name) like concat('%', LOWER(#{name}), '%')
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
 
 </mapper>
