@@ -11,9 +11,11 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @Api(tags = "Dish related interfaces")
@@ -22,13 +24,17 @@ import java.util.List;
 public class DishController {
 
     @Autowired
-    DishService dishService;
+    private DishService dishService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @PostMapping
     @ApiOperation("Add new dish")
     public Result addDish(@RequestBody DishDTO dishDTO){
         log.info("Add new Dish:{}", dishDTO);
         dishService.addDishWithFlavor(dishDTO);
+        //Delete the cache
+        cleanRedisCache("dish_"+ dishDTO.getCategoryId());
         return Result.success();
     }
 
@@ -45,13 +51,18 @@ public class DishController {
     public Result deleteInBatch(@RequestParam List<Long> ids){
         log.info("Delete one or multiple dishes:{}", ids);
         Integer count = dishService.deleteInBatch(ids.toArray(new Long[ids.size()]));
+        //Delete the cache: all dishes
+        cleanRedisCache("dish_*");
         return Result.success();
     }
+
 
     @PostMapping("/status/{status}")
     @ApiOperation("Enable or Disable dish sale status")
     public Result toggleDishStatus(@RequestParam Long id, @PathVariable Integer status){
         Integer update = dishService.toggleDishStatus(id, status);
+        //Delete the cache
+       cleanRedisCache("dish_*");
         return Result.success();
     }
 
@@ -66,8 +77,13 @@ public class DishController {
     @ApiOperation("Modify a dish")
     public Result updateDish(@RequestBody DishDTO dishDTO){
         Integer update = dishService.updateDish(dishDTO);
-        if (update > 0)
+        if (update > 0) {
+            //Delete the cache
+            //If the dish is updated with a new category, then we need to delete the cache of the old category and the new category.
+            //But here we just delete all the cache.
+            cleanRedisCache("dish_*");
             return Result.success();
+        }
         else throw new RuntimeException("Update dish failed...");
     }
 
@@ -76,5 +92,11 @@ public class DishController {
     public Result<List<Dish>> listDishByCategoryId(@RequestParam Long categoryId){
         List<Dish> dishes = dishService.listDishByCategoryId(categoryId);
         return Result.success(dishes);
+    }
+
+
+    private void cleanRedisCache(String pattern) {
+        Set keys = redisTemplate.keys(pattern);
+        redisTemplate.delete(keys);
     }
 }

@@ -187,4 +187,10 @@ public class DishServiceImpl implements DishService {
 
         return dishVOList;
     }
+
+    @Override
+    public Dish getById(Long id) {
+        List<Dish> byIds = dishMapper.getByIds(new Long[]{id});
+        return byIds.get(0);
+    }
 }
