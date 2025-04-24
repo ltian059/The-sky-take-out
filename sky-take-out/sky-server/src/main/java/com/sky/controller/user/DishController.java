@@ -40,6 +40,7 @@ public class DishController {
         //Key: rule: dish_categoryId
         String key = "dish_" + categoryId;
         List<DishVO> list = (List<DishVO>) redisTemplate.opsForValue().get(key);
+
         /*
           If redis has the data, return the data
          */

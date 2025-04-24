@@ -10,6 +10,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +26,7 @@ public class SetmealController {
 
     @ApiOperation("Add a setmeal")
     @PostMapping
+    @CacheEvict(cacheNames = "setmealCache", key = "#setmealDTO.categoryId")
     public Result addSetmeal(@RequestBody SetmealDTO setmealDTO){
         setmealService.addSetmeal(setmealDTO);
         return Result.success();
@@ -38,6 +41,7 @@ public class SetmealController {
 
     @ApiOperation("Delete one or multiple setmeals")
     @DeleteMapping
+    @CacheEvict(cacheNames = "setmealCache", allEntries = true)
     public Result deleteSetmeals(@RequestParam List<Long> ids){
         setmealService.deleteSetmeals(ids);
         return Result.success();
@@ -51,6 +55,7 @@ public class SetmealController {
     }
     @ApiOperation("Update a setmeal")
     @PutMapping
+    @CacheEvict(cacheNames = "setmealCache", allEntries = true)
     public Result updateSetmeal(@RequestBody SetmealDTO setmealDTO){
         setmealService.updateSetmeal(setmealDTO);
         return Result.success();
@@ -58,6 +63,7 @@ public class SetmealController {
 
     @ApiOperation("Toggle setmeal status")
     @PostMapping("/status/{status}")
+    @CacheEvict(cacheNames = "setmealCache", allEntries = true)
     public Result toggleSetmealStatus(@RequestParam Long id, @PathVariable Integer status){
         setmealService.toggleStatus(id, status);
         return Result.success();
