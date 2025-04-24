@@ -1,7 +1,10 @@
 package com.sky.service;
 
 import com.sky.dto.ShoppingCartDTO;
+import com.sky.entity.ShoppingCart;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.List;
 
 public interface ShoppingCartService {
 
@@ -13,5 +16,13 @@ public interface ShoppingCartService {
      * @return
      */
     void add(@RequestBody ShoppingCartDTO shoppingCartDTO);
+
+    /**
+     * 查看购物车
+     *
+     * @return
+     */
+    List<ShoppingCart> showShoppingCart();
+
 }
 
